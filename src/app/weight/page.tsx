@@ -1,13 +1,49 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+
+interface WeightRecord {
+  id: number;
+  value: number;
+  date: string;
+  note: string | null;
+}
 
 export default function WeightPage() {
   const [value, setValue] = useState("");
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [weights, setWeights] = useState<WeightRecord[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
+
+  useEffect(() => {
+    fetchWeights();
+  }, []);
+
+  const fetchWeights = async () => {
+    try {
+      const res = await fetch("/api/weight");
+      if (res.ok) {
+        const data = await res.json();
+        setWeights(data);
+      }
+    } catch (error) {
+      console.error("获取体重数据失败:", error);
+    } finally {
+      setDataLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,6 +64,7 @@ export default function WeightPage() {
         setMessage("记录成功！");
         setValue("");
         setNote("");
+        fetchWeights(); // 刷新数据
         setTimeout(() => setMessage(""), 2000);
       } else {
         setMessage("记录失败，请重试");
@@ -36,6 +73,30 @@ export default function WeightPage() {
       setMessage("网络错误，请重试");
     }
     setLoading(false);
+  };
+
+  // 准备图表数据（最近30天，按日期升序）
+  const chartData = weights
+    .slice(0, 30)
+    .reverse()
+    .map((w) => ({
+      date: new Date(w.date).toLocaleDateString("zh-CN", {
+        month: "short",
+        day: "numeric",
+      }),
+      weight: w.value,
+    }));
+
+  // 格式化日期显示
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("zh-CN", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   return (
@@ -106,14 +167,80 @@ export default function WeightPage() {
           )}
         </form>
 
-        {/* 历史记录（占位） */}
+        {/* 体重趋势图表 */}
+        {weights.length > 0 && (
+          <div className="mt-8 bg-white p-6 rounded-xl shadow-sm">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">
+              📈 体重趋势（最近30天）
+            </h2>
+            <div className="w-full h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis
+                    dataKey="date"
+                    stroke="#6b7280"
+                    fontSize={12}
+                  />
+                  <YAxis
+                    stroke="#6b7280"
+                    fontSize={12}
+                    domain={["dataMin - 1", "dataMax + 1"]}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#fff",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "8px",
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="weight"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    dot={{ fill: "#3b82f6", strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        {/* 历史记录列表 */}
         <div className="mt-8 bg-white p-6 rounded-xl shadow-sm">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">
-            📈 历史记录
+            📋 历史记录
           </h2>
-          <p className="text-gray-500 text-center py-8">
-            暂无记录，开始记录你的体重吧！
-          </p>
+          {dataLoading ? (
+            <p className="text-gray-500 text-center py-8">加载中...</p>
+          ) : weights.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">
+              暂无记录，开始记录你的体重吧！
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {weights.map((record) => (
+                <div
+                  key={record.id}
+                  className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-2xl font-bold text-blue-600">
+                      {record.value} kg
+                    </span>
+                    <span className="text-sm text-gray-500">
+                      {formatDate(record.date)}
+                    </span>
+                  </div>
+                  {record.note && (
+                    <p className="text-sm text-gray-600 mt-2">{record.note}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </main>
     </div>
