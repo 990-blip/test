@@ -1,0 +1,44 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Profile {
+  id          Int      @id @default(1)
+  name        String
+  targetWeight Float?
+  height      Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  weights Weight[]
+  diets   Diet[]
+}
+
+model Weight {
+  id        Int      @id @default(autoincrement())
+  value     Float
+  date      DateTime @default(now())
+  note      String?
+  profile   Profile  @relation(fields: [profileId], references: [id])
+  profileId Int      @default(1)
+  
+  @@index([date])
+}
+
+model Diet {
+  id        Int      @id @default(autoincrement())
+  meal      String
+  food      String
+  calories  Int?
+  date      DateTime @default(now())
+  note      String?
+  profile   Profile  @relation(fields: [profileId], references: [id])
+  profileId Int      @default(1)
+  
+  @@index([date])
+}
