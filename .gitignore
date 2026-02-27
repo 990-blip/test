@@ -1,7 +1,5 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # dependencies
-/node_modules
+node_modules/
 /.pnp
 .pnp.*
 .yarn/*
@@ -14,7 +12,7 @@
 /coverage
 
 # next.js
-/.next/
+.next/
 /out/
 
 # production
@@ -30,7 +28,7 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files
 .env*
 
 # vercel
@@ -40,4 +38,41 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# database
+*.db
+*.db-journal
+
+# Prisma
 /src/generated/prisma
+
+# Agent Cluster
+.agent-cluster/worktrees/
+.agent-cluster/logs/
+.agent-cluster/active-tasks.json
+
+# Python (legacy)
+__pycache__/
+*.py[codz]
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed_cfg
+*.egg
+MANIFEST
+.venv/
+venv/
+ENV/
+.pytest_cache/
+.mypy_cache/
