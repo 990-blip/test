@@ -1,7 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+
+interface DietRecord {
+  id: number;
+  meal: string;
+  food: string;
+  calories: number | null;
+  date: string;
+  note: string | null;
+}
 
 export default function DietPage() {
   const [meal, setMeal] = useState("早餐");
@@ -10,6 +19,26 @@ export default function DietPage() {
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [diets, setDiets] = useState<DietRecord[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDiets();
+  }, []);
+
+  const fetchDiets = async () => {
+    try {
+      const res = await fetch("/api/diet");
+      if (res.ok) {
+        const data = await res.json();
+        setDiets(data);
+      }
+    } catch (error) {
+      console.error("获取饮食数据失败:", error);
+    } finally {
+      setDataLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +62,7 @@ export default function DietPage() {
         setFood("");
         setCalories("");
         setNote("");
+        fetchDiets(); // 刷新数据
         setTimeout(() => setMessage(""), 2000);
       } else {
         setMessage("记录失败，请重试");
@@ -41,6 +71,29 @@ export default function DietPage() {
       setMessage("网络错误，请重试");
     }
     setLoading(false);
+  };
+
+  // 格式化日期显示
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("zh-CN", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  // 获取餐次图标
+  const getMealIcon = (meal: string) => {
+    const icons: Record<string, string> = {
+      早餐: "🌅",
+      午餐: "☀️",
+      晚餐: "🌙",
+      加餐: "🍎",
+    };
+    return icons[meal] || "🍽️";
   };
 
   return (
@@ -146,6 +199,56 @@ export default function DietPage() {
             </div>
           )}
         </form>
+
+        {/* 历史记录列表 */}
+        <div className="mt-8 bg-white p-6 rounded-xl shadow-sm">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">
+            📋 历史记录
+          </h2>
+          {dataLoading ? (
+            <p className="text-gray-500 text-center py-8">加载中...</p>
+          ) : diets.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">
+              暂无记录，开始记录你的饮食吧！
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {diets.map((record) => (
+                <div
+                  key={record.id}
+                  className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50"
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">{getMealIcon(record.meal)}</span>
+                      <div>
+                        <div className="font-semibold text-gray-800">
+                          {record.food}
+                        </div>
+                        <div className="text-sm text-gray-500">{record.meal}</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      {record.calories && (
+                        <div className="text-lg font-bold text-green-600">
+                          {record.calories} kcal
+                        </div>
+                      )}
+                      <div className="text-xs text-gray-400">
+                        {formatDate(record.date)}
+                      </div>
+                    </div>
+                  </div>
+                  {record.note && (
+                    <p className="text-sm text-gray-600 mt-2 bg-gray-50 rounded p-2">
+                      {record.note}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );
