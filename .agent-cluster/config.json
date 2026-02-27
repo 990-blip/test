@@ -1,0 +1,8 @@
+{
+  "projectDir": "/home/admin/weight-loss-system",
+  "repoUrl": "https://github.com/990-blip/test.git",
+  "feishuChatId": "oc_126b0f5a7283b7322838d6d73ddcb9e6",
+  "agentCommand": "claude",
+  "maxAgents": 3,
+  "defaultModel": "claude-sonnet-4-20250514"
+}
